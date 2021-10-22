@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -21,6 +22,7 @@ func main() {
 	scanner := bufio.NewScanner(file)
 
 	max := -math.MaxUint32
+	seats := make([]int, 0)
 	for scanner.Scan() {
 		boardingPass := scanner.Text()
 
@@ -35,10 +37,20 @@ func main() {
 		r, _ := strconv.ParseUint(row, 2, 32)
 		c, _ := strconv.ParseUint(column, 2, 32)
 		v := int(r*8 + c)
+		seats = append(seats, v)
 
 		if v > max {
 			max = v
 		}
 	}
 	fmt.Println(max)
+
+	sort.Ints(seats)
+	for i, v := range seats {
+		if i > 0 && i < len(seats)-1 {
+			if seats[i+1]-v > 1 {
+				fmt.Println("my seat: ", v+1)
+			}
+		}
+	}
 }

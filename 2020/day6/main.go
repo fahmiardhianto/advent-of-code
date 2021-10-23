@@ -21,18 +21,26 @@ func main() {
 	scanner.Split(SplitBlankLine)
 
 	sum := 0
-	groupAnswer := make(map[string]bool)
+	groupAnswer := make(map[string]int)
 	for scanner.Scan() {
-		replacedNewLine := strings.ReplaceAll(scanner.Text(), "\n", "")
-		qs := strings.Split(replacedNewLine, "")
-		for _, q := range qs {
-			if _, ok := groupAnswer[q]; !ok {
-				groupAnswer[q] = true
+		trimmed := strings.TrimSpace(scanner.Text())
+		answers := strings.Split(trimmed, "\n")
+		numOfPeople := len(answers)
+		for _, a := range answers {
+			questions := strings.Split(a, "")
+			for _, q := range questions {
+				_, ok := groupAnswer[q]
+				if !ok {
+					groupAnswer[q] = 1
+				} else {
+					groupAnswer[q] += 1
+				}
+				if groupAnswer[q] == numOfPeople {
+					sum += 1
+				}
 			}
 		}
-		fmt.Println(len(groupAnswer))
-		sum += len(groupAnswer)
-		groupAnswer = make(map[string]bool)
+		groupAnswer = make(map[string]int)
 	}
 	fmt.Println(sum)
 }

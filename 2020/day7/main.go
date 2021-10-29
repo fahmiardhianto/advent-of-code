@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
-	"unicode"
 )
 
 func main() {
@@ -25,14 +25,25 @@ func main() {
 
 	result := rs.findBagsContain("shiny gold")
 	fmt.Println(len(result))
+
+	fmt.Println(rs.countBags("shiny gold"))
 }
 
 type ruleset struct {
-	bags map[string][]string
+	bagsContain map[string][]string
+	bagsContent map[string][]contentDetail
+}
+
+type contentDetail struct {
+	color       string
+	requiredQty int
 }
 
 func newRuleSet() ruleset {
-	return ruleset{bags: make(map[string][]string)}
+	return ruleset{
+		bagsContain: make(map[string][]string),
+		bagsContent: make(map[string][]contentDetail),
+	}
 }
 
 func (r *ruleset) parseLine(line string) {
@@ -40,30 +51,51 @@ func (r *ruleset) parseLine(line string) {
 	bag := rule[0]
 	contents := strings.Split(rule[1], ", ")
 	for _, c := range contents {
-		c = strings.TrimLeftFunc(c, func(r rune) bool {
-			return unicode.IsNumber(r)
-		})
 		c = strings.TrimSuffix(c, ".")
 		c = strings.TrimSuffix(c, "bag")
 		c = strings.TrimSuffix(c, "bags")
 		c = strings.TrimSpace(c)
-		r.bags[c] = append(r.bags[c], bag)
+		content := strings.SplitN(c, " ", 2)
+		bagColor := content[1]
+		qty, _ := strconv.Atoi(content[0])
+
+		if bagColor == "other" {
+			continue
+		}
+		r.bagsContain[bagColor] = append(r.bagsContain[bagColor], bag)
+		r.bagsContent[bag] = append(r.bagsContent[bag], contentDetail{color: bagColor, requiredQty: qty})
 	}
 }
 
 func (r *ruleset) findBagsContain(content string) map[string]bool {
 	result := make(map[string]bool)
 
-	stacks := r.bags[content]
+	stacks := r.bagsContain[content]
 	var bag string
 
 	for len(stacks) > 0 {
 		bag, stacks = stacks[len(stacks)-1], stacks[:len(stacks)-1]
 		result[bag] = true
-		for _, c := range r.bags[bag] {
+		for _, c := range r.bagsContain[bag] {
 			stacks = append(stacks, c)
 		}
 	}
 
 	return result
+}
+
+func (r *ruleset) countBags(bag string) int {
+	contents := r.bagsContent[bag]
+	if len(contents) == 0 {
+		return 0
+	}
+
+	var sum int
+	for _, s := range contents {
+		bagQty := s.requiredQty
+		contentQty := r.countBags(s.color)
+		sum += bagQty*contentQty + bagQty
+	}
+
+	return sum
 }
